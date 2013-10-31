@@ -17,10 +17,21 @@ var vote = function (id) {
     alert('Vote for ' + id + ' Accepted');
     $.post('/vote', {id: id});
 };
+
+var getTalks = function () {
+    var data = $.getJSON('/gettalks');
+    data.done(function (data) {
+        console.log(data);
+        var talks = data.talks;
+        console.log(talks);
+        for (n in talks) {
+            var talk = talks[n];
+            console.log(talk);
+            addTalk(talk.title, talk.speaker, talk.description, talk.id);
+        };
+    });
+};
+
 $(function () {
-    //TODO: Add code to retreve talks from server.
-    //      These just simulate.
-    addTalk('Angular Directives', 'Patrick Forrenger', 'None', 1234);
-    addTalk('Google Scripts', 'Mohamid', 'None', 1235);
-    addTalk('200OK', 'Luke Crouch', 'None', 1236);
+    getTalks();
 });

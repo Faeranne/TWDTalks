@@ -7,7 +7,7 @@
 
 /* *********************************************
  * NOTICE: This does not work yet.  Everything *
- * listed is purely mockup.  Any issues listed *
+ * listed is purely mockup.  Any issues added  *
  * will be treated as feature requests and     *
  * handled as such.  Current TODO list follows *
  *                                             *
@@ -17,6 +17,18 @@
 
 var express = require('express');
 var app = express()
+
+//TODO: replace with database information
+var data = {talks:
+            [
+                {
+                    title: "How to save the world",
+                    speaker: "Adam Savage",
+                    description: "Learn how saving the world can be easy and fun!",
+                    id: 1234
+                }
+            ]
+           }
 app.use(
     express.static(__dirname + '/')
 )
@@ -33,8 +45,9 @@ app.post('/vote', function(req,res){
     console.log(req.body.id)
     res.send('accepted')
 })
-app.post('/gettalks', function(req,res){
+app.get('/gettalks', function(req,res){
     //TODO: Return a list of talks from the database
-    console.log(req.body)
-    res.send(JSON.parse({talks:{title:'How to save the world',speaker:'Adam Savage',description:'Learn how saving the world can be easy and fun!'}}));
+    console.log(JSON.stringify(data))
+    res.send(JSON.stringify(data));
+})
 app.listen(8000);
