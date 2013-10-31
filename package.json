@@ -10,6 +10,8 @@
   "author": "Blixa Morgan <blixa@projectmakeit.com>",
   "license": "MIT",
   "dependencies": {
-    "express": "~3.4.4"
+    "express": "~3.4.4",
+    "express-persona": "~0.1.0",
+    "browserid-verify": "~0.1.2"
   }
 }
