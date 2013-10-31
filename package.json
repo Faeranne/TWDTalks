@@ -1,0 +1,16 @@
+{
+  "name": "TWDTalks",
+  "version": "0.0.0",
+  "description": "Tulsa Web Devs talk manager",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "",
+  "author": "Blixa Morgan <blixa@projectmakeit.com>",
+  "license": "MIT",
+  "dependencies": {
+    "connect": "~2.9.2",
+    "express": "~3.4.4"
+  }
+}
