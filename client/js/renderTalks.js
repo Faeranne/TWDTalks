@@ -6,7 +6,7 @@ var addTalk = function (title, speaker, description, id) {
     html += "<h3>By " + speaker + "</h3>";
     html += "<p>" + description + "</p>";
     html += "<lable>Are you interested in this talk?</lable>";
-    html += "<input type=button onClick='vote(" + id + ")' value='Vote'>";
+    html += "<input type=button onClick='vote(\"" + id + "\")' value='Vote'>";
     html += "<br/>";
     talk.html(html);
     talksDiv.append(talk);
@@ -27,7 +27,7 @@ var getTalks = function () {
         for (n in talks) {
             var talk = talks[n];
             console.log(talk);
-            addTalk(talk.title, talk.speaker, talk.description, talk.id);
+            addTalk(talk.title, talk.speaker, talk.description, talk._id);
         };
     });
 };

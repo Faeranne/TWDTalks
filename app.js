@@ -17,18 +17,25 @@
 var express = require('express');
 var app = express()
 var verify = require('browserid-verify')();
+var mongodb = require('mongodb');
+
+var MongoClient = mongodb.MongoClient,
+    ObjectID = mongodb.ObjectID
+
+var dbURL = process.env.DBURL
+var dbUser = process.env.DBUSER
+var dbPass = process.env.DBPASS
+
+var talks = null;
+
+MongoClient.connect(dbURL, function(err, db) {
+    if(err) throw err;
+    
+    talks = db.collection('talks');
+    
+});
 
 //TODO: replace with database information
-var data = {talks:
-            [
-                {
-                    title: "How to save the world",
-                    speaker: "Adam Savage",
-                    description: "Learn how saving the world can be easy and fun!",
-                    id: 1234
-                }
-            ]
-           }
 app.use(express.logger())
    .use(express.static(__dirname+'/client'))
    .use(express.bodyParser())
@@ -79,7 +86,7 @@ app.post('/persona/login',function(req, resp){
       // request worked, but verfication didn't, return JSON
       console.error(data.reason);
       console.log(email);
-      resp.send(403, data)
+      resp.send(403, data);
       }
     });
 })
@@ -92,6 +99,7 @@ app.post('/newtalk', function(req,res){
     if(req.session && req.session.email){
       console.log(req.body)
       res.send('Talk has been added')
+      addTalk(req.body)
     }else{
         res.send(403)
     }
@@ -102,6 +110,7 @@ app.post('/vote', function(req,res){
     if(req.session && req.session.email){
         console.log(req.body.id)
         res.send('accepted')
+        addVoteFor(req.body.id)
     }else{
         res.send(403)
     }
@@ -110,11 +119,27 @@ app.post('/vote', function(req,res){
 app.get('/gettalks', function(req,res){
     if(req.session && req.session.email){
         console.log(req.session)
-        //TODO: Return a list of talks from the database
-        console.log(JSON.stringify(data))
-        res.send(JSON.stringify(data));
+        talks.find().toArray(function(err,results){
+            //TODO: Return a list of talks from the database
+            var data = {talks:results}
+            console.log(JSON.stringify(data))
+            res.send(JSON.stringify(data));
+        });
     }else{
         res.send(403)
     }
 })
 app.listen(8000);
+
+
+function addVoteFor(id){
+  talks.findOne({_id: new ObjectID(id)}, function(err, talk){
+    talk.votes++
+    talks.update({_id: new ObjectID(id)}, talk, {}, console.log)
+  });
+}
+
+function addTalk(talk){
+  talk.votes = 0
+  talks.insert(talk, {}, console.log);
+}
