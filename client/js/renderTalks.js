@@ -14,8 +14,12 @@ var addTalk = function (title, speaker, description, id) {
 };
 
 var vote = function (id) {
-    alert('Vote for ' + id + ' Accepted');
-    $.post('/vote', {id: id});
+    $.post('/vote', {id: id}).done(function(data){
+      //TODO: should use a page model, instead of an annoying popup
+      alert('Vote for ' + id + ' Accepted');
+    }).fail(function(data){
+      alert('Vote Failed.  Reason: ' + data + '.')
+    });
 };
 
 var getTalks = function () {

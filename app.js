@@ -103,10 +103,9 @@ app.post('/newtalk', function(req,res){
     //TODO: Save talk to database
     if(req.session && req.session.email){
       console.log(req.body)
-      res.send('Talk has been added')
-      addTalk(req.session.email,req.body)
+      addTalk(req.session.email,req.body,res)
     }else{
-        res.send(401)
+        res.send(401,'Not Authenticated')
     }
 
 })
@@ -149,11 +148,11 @@ function addVoteFor(email,id,res){
     console.log(user)
     if(user.votes<3){
       talks.findOne({_id: new ObjectID(id)}, function(err, talk){
-        if(talk.votes[email]==true){
+        if(talk.votes[user._id]==true){
           res.send(403,'Already Voted')
           return
         }
-        talk.votes[email]=true
+        talk.votes[user._id]=true
         talks.update({_id: new ObjectID(id)}, talk, {}, console.log)
         res.send(200,'vote accepted')
         user.votes++
@@ -165,15 +164,33 @@ function addVoteFor(email,id,res){
   })
 }
 
-function addTalk(email,talk){
-  talk.votes = {}
-  talk.email = email
-  talks.insert(talk, {}, console.log);
-  return true
+function addTalk(email,talk,res){
+  users.findOne({email:email},function(err,user){
+    if(user.votes<3){
+      talk.votes = {}
+      talk.votes[user._id]=true
+      talk.user = user._id
+      user.votes++
+      talks.insert(talk, {}, console.log);
+      users.update({email:email},user,{},console.log)
+      res.send(200,'SUCCESS: Talk was accepted.')
+    }else{
+      res.send(403,'ERROR: You are out of votes!')
+    }
+  })
 }
 
 function runMatchingAlgorithem(res){
   talks.find().toArray(function(err,talks){
+    talks.sort(function(a,b){
+      if(a.votes.length>b.votes.lenght){
+        return 1;
+      }else if(a.votes.length<b.votes.lenght){
+        return -1;
+      }else{
+        return 0;
+     }
+    });
     for(var x = 0;x<talks.length;x++){
       talks[x].overlap = {}
       for(email in talks[x].votes){
