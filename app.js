@@ -23,8 +23,7 @@ var MongoClient = mongodb.MongoClient,
     ObjectID = mongodb.ObjectID
 
 var dbURL = process.env.DBURL
-var dbUser = process.env.DBUSER
-var dbPass = process.env.DBPASS
+var audiance = process.env.AUD
 
 var talks = null;
 
@@ -69,7 +68,7 @@ app.post('/persona/login',function(req, resp){
 
     var assertion = req.body.assertion;
 
-    verify(assertion, 'localhost:8000', function(err, email, data) {
+    verify(assertion, audiance, function(err, email, data) {
       if (err) {
         // return JSON with a 500 saying something went wrong
         console.warn('request to verifier failed : ' + err);
