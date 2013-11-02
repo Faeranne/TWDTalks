@@ -129,7 +129,7 @@ app.get('/gettalks', function(req,res){
         res.send(403)
     }
 })
-app.listen(8000);
+app.listen(process.env.PORT || 8000);
 
 
 function addVoteFor(id){
