@@ -31,6 +31,7 @@ MongoClient.connect(dbURL, function(err, db) {
     if(err) throw err;
     
     talks = db.collection('talks');
+    users = db.collection('users');
     
 });
 
@@ -79,6 +80,11 @@ app.post('/persona/login',function(req, resp){
       if ( email ) {
         console.info('browserid auth successful, setting req.session.email');
         req.session.email = email;
+        users.find({email:email}).toArray(function(err,results){
+          if(results.length<1){
+            users.insert({email:email,votes:0},{},console.log)
+          }
+        })
         resp.send(200, data);
       }else{
 
@@ -98,20 +104,18 @@ app.post('/newtalk', function(req,res){
     if(req.session && req.session.email){
       console.log(req.body)
       res.send('Talk has been added')
-      addTalk(req.body)
+      addTalk(req.session.email,req.body)
     }else{
-        res.send(403)
+        res.send(401)
     }
 
 })
 app.post('/vote', function(req,res){
     //TODO: Save vote to database
     if(req.session && req.session.email){
-        console.log(req.body.id)
-        res.send('accepted')
-        addVoteFor(req.body.id)
+      addVoteFor(req.session.email,req.body.id,res)
     }else{
-        res.send(403)
+        res.send(401,'Not Authenticated')
     }
 
 })
@@ -119,26 +123,124 @@ app.get('/gettalks', function(req,res){
     if(req.session && req.session.email){
         console.log(req.session)
         talks.find().toArray(function(err,results){
-            //TODO: Return a list of talks from the database
             var data = {talks:results}
             console.log(JSON.stringify(data))
             res.send(JSON.stringify(data));
         });
     }else{
-        res.send(403)
+        res.send(401)
     }
 })
+
+app.get('/talk/results', function(req,res){
+  if(req.session && req.session.email){
+    var results = runMatchingAlgorithem(res)
+  }else{
+    res.send(401)
+  }
+})
+      
 app.listen(process.env.PORT || 8000);
 
 
-function addVoteFor(id){
-  talks.findOne({_id: new ObjectID(id)}, function(err, talk){
-    talk.votes++
-    talks.update({_id: new ObjectID(id)}, talk, {}, console.log)
-  });
+function addVoteFor(email,id,res){
+  users.findOne({email:email},function(err,user){
+    console.log(err)
+    console.log(user)
+    if(user.votes<3){
+      talks.findOne({_id: new ObjectID(id)}, function(err, talk){
+        if(talk.votes[email]==true){
+          res.send(403,'Already Voted')
+          return
+        }
+        talk.votes[email]=true
+        talks.update({_id: new ObjectID(id)}, talk, {}, console.log)
+        res.send(200,'vote accepted')
+        user.votes++
+        users.update({email:email},user,{},console.log)
+      });
+    }else{
+      res.send(403,'Too Many Votes.')
+    }
+  })
 }
 
-function addTalk(talk){
-  talk.votes = 0
+function addTalk(email,talk){
+  talk.votes = {}
+  talk.email = email
   talks.insert(talk, {}, console.log);
+  return true
+}
+
+function runMatchingAlgorithem(res){
+  talks.find().toArray(function(err,talks){
+    for(var x = 0;x<talks.length;x++){
+      talks[x].overlap = {}
+      for(email in talks[x].votes){
+        for(var y = 0; y< talks.length;y++){
+          if(x=y){
+            talks[x].overlap[talks[y]._id]=0
+            continue;
+          }
+          for(email2 in talks[y].votes){
+            if(email==email2){
+              talks[x].overlap[talks[y]._id]++
+            }
+          }
+        }
+      }
+    }
+    var talkGrid = [[],[],[]]
+    for(x=0;x<3;x++){
+      if(!talks.length>0){
+        break;
+      }
+      talkLeader = talks.shift()
+      console.log(talkLeader)
+      talkGrid[x][0]=talkLeader
+      var currentColOver = []
+      if(x>0){
+        currentColOver[0]=talkGrid[x-1][0].overlap[talkLeader._id]
+      }
+      for(y=1; y<3; y++){
+        for(z=0; z<talks.length; z++){
+          var finished = false;
+          if(talkLeader.overlap[talks[z]._id]>0){
+            if(x>0){
+              currentColOver[y]=talk[z].overlap[talkGrid[x-1][y]._id]
+            }
+            for(a=0; a<y; a++){
+              if(currentColOver[y]>currentColOver[a]){
+                if(talkGrid[x-1][a].overlap[talkGrid[x][y]._id]<currentColOver[y] && talkGrid[x-1][a].overlap[talkGrid[x][a]._id]<currentColOver[y]){
+                  var previousTalk = talkGrid[x][a]
+                  talkGrid[x][a]=talk.splice(z,1)[0]
+                  talkGrid[x][y]=previousTalk
+                  if(x>0){
+                    currentColOver[a]=talkGrid[x-1][a].overlap[talkGrid[x][a]._id]
+                    currentColOver[y]=talkGrid[x-1][y].overlap[talkGrid[x][y]._id]
+                  }
+                  finished=true;
+                }
+              }
+            }
+            if(finished){
+              continue;
+            }
+          }else{
+           finished=true;
+          }
+          if(!finished){
+            talkGrid[x][y]=talks.splice(z,1);
+            if(x>0){
+              currentColOver[y]=talkGrid[x-1][y].overlap[talkGrid[x][y]._id]
+            }
+          }
+        }
+        if(!talks.length>0){
+          break;
+        }
+      }
+    }  
+    res.send(JSON.stringify(talkGrid));
+  })
 }
