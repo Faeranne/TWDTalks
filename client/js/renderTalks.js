@@ -18,7 +18,8 @@ var vote = function (id) {
       //TODO: should use a page model, instead of an annoying popup
       alert('Vote for ' + id + ' Accepted');
     }).fail(function(data){
-      alert('Vote Failed.  Reason: ' + data + '.')
+      alert('Vote Failed.  Reason: ' + data.responseText)
+      console.log(data)
     });
 };
 
