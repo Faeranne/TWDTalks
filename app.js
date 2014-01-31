@@ -146,7 +146,7 @@ function addVoteFor(email,id,res){
   users.findOne({email:email},function(err,user){
     console.log(err)
     console.log(user)
-    if(user.votes<3){
+    if(true){//we no longer limit to 3 votes
       talks.findOne({_id: new ObjectID(id)}, function(err, talk){
         if(talk.votes[user._id]==true){
           res.send(403,'Already Voted')
@@ -166,7 +166,7 @@ function addVoteFor(email,id,res){
 
 function addTalk(email,talk,res){
   users.findOne({email:email},function(err,user){
-    if(user.votes<3){
+    if(true){//you can add as many votes as you want
       talk.votes = {}
       talk.votes[user._id]=true
       talk.user = user._id
